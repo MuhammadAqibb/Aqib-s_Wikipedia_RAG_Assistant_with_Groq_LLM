@@ -1,0 +1,35 @@
+[tool.poetry]
+name = "pinecone-wikipedia"
+version = "0.1.0"
+description = ""
+authors = ["Lance Martin <lance@langchain.dev>"]
+readme = "README.md"
+packages = [
+    { include = "app" },
+]
+
+[tool.poetry.dependencies]
+python = ">=3.11,<3.13"
+uvicorn = "^0.23.2"
+langserve = ">=0.3.0"
+pydantic = ">=2.0"
+pinecone-client = "3.0.0"
+cohere = "^4.40"
+openai = "^1.6.1"
+python-dotenv = "^1.0.0"
+langchain-community = ">=0.3.0"
+jupyter = "^1.0.0"
+langchain = ">=0.3.0"
+langchain-pinecone = ">=0.2.0"
+langchain-huggingface = ">=0.1.0"
+pinecone = ">=7.0.2"
+sentence-transformers = "^5.2.2"
+jinja2 = "^3.1.6"
+langchain-groq = "^1.1.1"
+
+[tool.poetry.group.dev.dependencies]
+langchain-cli = ">=0.0.15"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
