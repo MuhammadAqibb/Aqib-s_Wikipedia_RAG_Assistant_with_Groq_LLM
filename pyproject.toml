@@ -1,34 +1,27 @@
 [tool.poetry]
-name = "pinecone-wikipedia"
-version = "0.1.0"
-description = ""
-authors = ["Lance Martin <lance@langchain.dev>"]
+name = "wikipedia-rag"
+package-mode = false
+version = "3.0.0"
+description = "Real-time Wikipedia RAG with Groq LLaMA 3.3, Cohere Embeddings, and Pinecone"
+authors = ["You <you@example.com>"]
 readme = "README.md"
-packages = [
-    { include = "app" },
-]
 
 [tool.poetry.dependencies]
-python = ">=3.11,<3.13"
-uvicorn = "^0.23.2"
-langserve = ">=0.3.0"
-pydantic = ">=2.0"
-pinecone-client = "3.0.0"
-cohere = "^4.40"
-openai = "^1.6.1"
+python = ">=3.10,<3.13"
+fastapi = "^0.115.0"
+uvicorn = {extras = ["standard"], version = "^0.32.0"}
+langchain = "^0.3.0"
+langchain-groq = "^0.2.0"
+langchain-cohere = "^0.3.0"
+langchain-pinecone = "^0.2.0"
+langchain-community = "^0.3.0"
 python-dotenv = "^1.0.0"
-langchain-community = ">=0.3.0"
-jupyter = "^1.0.0"
-langchain = ">=0.3.0"
-langchain-pinecone = ">=0.2.0"
-langchain-huggingface = ">=0.1.0"
-pinecone = ">=7.0.2"
-sentence-transformers = "^5.2.2"
-jinja2 = "^3.1.6"
-langchain-groq = "^1.1.1"
+requests = "^2.32.0"
+pydantic = "^2.9.0"
 
 [tool.poetry.group.dev.dependencies]
-langchain-cli = ">=0.0.15"
+ipykernel = "^6.29.0"
+notebook = "^7.2.0"
 
 [build-system]
 requires = ["poetry-core"]
