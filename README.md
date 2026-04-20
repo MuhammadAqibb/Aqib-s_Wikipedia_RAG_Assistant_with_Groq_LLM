@@ -62,9 +62,9 @@ You need free API keys from three services:
 
 Using pip (recommended):
 bash
----bash
+
 pip install fastapi uvicorn langchain langchain-groq langchain-huggingface langchain-pinecone langchain-community python-dotenv requests pydantic sentence-transformers datasets "pinecone-client==5.0.1"
----
+
 Or using Poetry:
 pip install poetry
 poetry install
