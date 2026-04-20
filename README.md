@@ -1,112 +1,147 @@
-### Real time Wikipedia fetching RAG Chatbot with Pinecone
+# WikiRAG — Real-Time Wikipedia Assistant
 
-## Quick run
-1: Change the '.env.example' file to .env
-2: Put the Keys in front of the variables.
-3: Install poetry (run in .... in the terminal)
-4: Run "poetry run langchain serve" in the terminal
-5: run the local terminal " http://localhost:8000/
+A production-ready conversational AI app that combines Wikipedia knowledge, vector search, and Groq's LLaMA 3.3 70B to answer any question with rich, structured responses, with full conversation memory.
 
+---
 
-## 🌟 Features
+## What It Does
 
-* RAG-Powered Responses: Answers questions using real time Wikipedia content.
-* Conversation Memory: Maintains context across multiple questions
-* Modern UI: Clean, responsive chat interface similar to Claude
-* Real-time Streaming: Typing indicators and smooth message flow
-**Free LLM**: Uses Groq's free API for fast inference
+WikiRAG is a **Retrieval Augmented Generation (RAG)** application. Instead of relying solely on an LLM's training data, it:
 
-## Pinecone-Serverless
+1. Takes your question
+2. Searches a **Pinecone vector index** of Wikipedia articles for relevant content
+3. Feeds that Wikipedia context to **Groq LLaMA 3.3 70B**
+4. Returns a rich, structured answer combining both Wikipedia facts and the LLM's broad knowledge
+5. Remembers your conversation so follow-up questions work naturally
 
-Pinecone Serverless provides usage based pricing and support for unlimited scaling and helps address pain points with vectorstore productionization that can be seen in the community. This repo builds a RAG chain that connects to Pinecone Serverless index using LCEL, it uses HuggingFace embeddings (free), Groq LLM (...)(free) ......... and uses LangSmith to monitor the input / outputs.  
+## Architecture
 
-![chain](https://github.com/langchain-ai/pinecone-serverless/assets/122662504/454266ba-727c-4ce0-ae56-7d004c0fb5d4)
-Diagram was copied from pinecone serverless & RAG repository. 
+User Question
+      │
+      ▼
+ Follow-up? ──Yes──► Reuse cached context
+      │
+      No
+      │
+      ▼
+HuggingFace Embeddings (all-MiniLM-L6-v2)
+      │
+      ▼
+Pinecone Vector Search (Top 5 Wikipedia chunks)
+      │
+      ▼
+Groq LLaMA 3.3 70B (Wikipedia context + training knowledge + conversation history)
+      │
+      ▼
+Structured Answer → FastAPI → Chat UI
 
+## Tech Stack
 
-Question → Pinecone → Get URLs → Fetch Full Wikipedia Pages → LLM → Answer 
-### API keys
+| Component | Technology |
+|-----------|------------|
+| LLM | Groq LLaMA 3.3 70B Versatile |
+| Vector DB | Pinecone Serverless |
+| Embeddings | HuggingFace all-MiniLM-L6-v2 (384 dims) |
+| Backend | FastAPI + Uvicorn |
+| Frontend | Vanilla HTML/CSS/JS (dark theme) |
+| Data | Wikipedia (wikimedia/wikipedia HuggingFace dataset) |
 
-Ensure these are set:
+## Setup & Installation
 
-* PINECONE_API_KEY
-* PINECONE_ENVIRONMENT
-* PINECONE_INDEX_NAME 
-* GROQ_API_KEY
+### Prerequisites
+You need free API keys from three services:
+| Service | Purpose | Get Key At |
+|---------|---------|------------|
+| **Groq** | LLM inference (fast & free) | [console.groq.com](https://console.groq.com) |
+| **Pinecone** | Vector database | [app.pinecone.io](https://app.pinecone.io) |
+| **HuggingFace** | Embeddings model (no key needed, optional for higher limits) | [huggingface.co](https://huggingface.co) |
 
-Note: the choice of embedding model may require additional API keys, such as:
-* COHERE_API_KEY
-* HUGGINGFACE_API_KEY
+### Step 1 — Clone or download the project files
 
-### Notebook
+### Step 2 — Install dependencies
 
-For prototyping:
-```
-poetry run jupyter notebook
-```
-
-### Deployment
-
-This repo was created by following these steps:
-
-**(1) Create a LangChain app.**
-
-Run:
-```
-langchain app new .  
-```
-
-This creates two folders:
-```
-app: This is where LangServe code will live
-packages: This is where your chains or agents will live
-```
-
-It also creates:
-```
-Dockerfile: App configurations
-pyproject.toml: Project configurations
-```
-
-Add your app dependencies to `pyproject.toml` and `poetry.lock` to support Pinecone serverless:
-```
-poetry add pinecone-client==3.0.0.dev8
-poetry add langchain-community==0.0.12
-poetry add cohere
-poetry add openai
-poetry add jupyter
-```
-
-Update enviorment based on the updated lock file:
-```
+Using pip (recommended):
+bash
+---bash
+pip install fastapi uvicorn langchain langchain-groq langchain-huggingface langchain-pinecone langchain-community python-dotenv requests pydantic sentence-transformers datasets "pinecone-client==5.0.1"
+---
+Or using Poetry:
+pip install poetry
 poetry install
+
+### Step 3 — Configure environment variables
+
+Copy `.env.example` to `.env` and fill in your keys:
+GROQ_API_KEY=gsk_xxxxxxxxxxxxxxxxxxxxxxxxxxxx
+PINECONE_API_KEY=pcsk_xxxxxxxxxxxxxxxxxxxxxxxxxxxx
+PINECONE_INDEX_NAME=
+
+### Step 4 — Create a Pinecone index
+
+1. Go to [app.pinecone.io](https://app.pinecone.io)
+2. Click **Create Index**
+3. Set:
+   - **Name:** whatever you put in `.env
+   - **Dimensions:** `384`
+   - **Metric:** `cosine`
+   - **Cloud:** AWS, Region: us-east-1 (free tier)
+4. Click **Create Index**
+
+### Step 5 — Load Wikipedia data into Pinecone
+
+This is a **one-time step**. It fetches Wikipedia articles from HuggingFace and loads them into your Pinecone index:
+
+```bash
+python load_wikipedia.py
 ```
 
-**(2) Add your runnable (RAG app)**
+This will load 50,000 Wikipedia articles. You'll see progress every 100 articles:
 
-Create a file, `chain.py` with a runnable named `chain` that you want to execute. 
+### Step 6 — Start the server
 
-This is our RAG logic (e.g., that we prototyped in our notebook).
+uvicorn server:app --host 0.0.0.0 --port 8000
 
-Add `chain.py` to `app` directory.
+### Step 7 — Open the app
 
-Import the LCEL object in `server.py`:
-```
-from app.chain import chain as pinecone_wiki_chain
-add_routes(app, pinecone_wiki_chain, path="/pinecone-wikipedia")
-```
+Visit **[http://localhost:8000](http://localhost:8000)** in your browser.
 
-Run locally
-```
-poetry run langchain serve
-```
 
-**(3) Deploy it with hosted LangServe**
+## How It Works — Deep Dive
+### RAG (Retrieval Augmented Generation)
+Traditional LLMs answer from training data alone, which can be outdated or hallucinated. RAG fixes this by:
+1. **Retrieving** relevant real documents (Wikipedia) before answering
+2. **Augmenting** the LLM prompt with those documents
+3. **Generating** an answer grounded in real facts
+### Vector Search
+Text is converted into numerical vectors (embeddings) using `all-MiniLM-L6-v2`. Similar text has similar vectors. Pinecone finds the most semantically similar Wikipedia chunks to your question — even if the exact words don't match.
+### Conversation Memory
+- The frontend stores conversation history in a JavaScript array
+- Every request sends the full history to the backend
+- The server caches the last retrieved Wikipedia context per session
+- Follow-up questions reuse the cached context instead of triggering a new search
+- Meta instructions like "too short" or "elaborate" are detected and never sent to Pinecone
+### Smart Follow-up Detection
+The app distinguishes between:
+- **New topics** → searches Pinecone fresh (e.g. "What is CRISPR?")
+- **Follow-ups** → reuses cached context (e.g. "why is it important?")
+- **Meta instructions** → reuses cached context (e.g. "make it shorter")
 
-Go to your LangSmith console.
+## Real-World Applications
+This exact pattern — RAG + vector search + LLM — is used in production for:
 
-Select `New Deployment`.
+- **Customer support bots** that answer only from company documentation
+- **Legal assistants** grounded in specific case files or legislation
+- **Medical assistants** using approved clinical guidelines
+- **Internal knowledge bases** for companies and teams
+- **Research assistants** over scientific papers
+- **Educational tools** that explain topics with cited sources
 
-Specify this Github url.
+## Extending the Project
 
-Add the abovementioned API keys as secrets.
+**Add persistent chat history:**
+Replace the in-memory `history` array with a SQLite database to survive page refreshes.
+
+**Deploy to the web:**
+
+pip install gunicorn
+gunicorn server:app -w 4 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000
